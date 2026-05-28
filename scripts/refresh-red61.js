@@ -210,7 +210,7 @@ function buildReport(table, settings) {
   });
 
   const capacity = Number.isFinite(settings.showCapacity) ? settings.showCapacity : null;
-  const performances = Array.from(grouped.values())
+  const performancesWithSales = Array.from(grouped.values())
     .map((performance) => {
       return {
         ...performance,
@@ -224,6 +224,7 @@ function buildReport(table, settings) {
       if (b.date) return 1;
       return a.index - b.index;
     });
+  const performances = fillMissingPerformances(performancesWithSales, capacity);
 
   const hasPerformanceData = performances.length > 0 && dateIndex >= 0 && soldIndex >= 0;
   const totalSold = performances.reduce((total, performance) => {
@@ -246,6 +247,57 @@ function buildReport(table, settings) {
     totalCapacity,
     showCapacity: settings.showCapacity,
   };
+}
+
+function fillMissingPerformances(performances, capacity) {
+  const datedPerformances = performances.filter((performance) => performance.date);
+  if (!datedPerformances.length) return performances;
+
+  const existingDates = new Set(datedPerformances.map((performance) => dateKey(performance.date)));
+  const firstDate = new Date(datedPerformances[0].date);
+  const lastDate = new Date(datedPerformances[datedPerformances.length - 1].date);
+  const filled = [...performances];
+
+  for (const date = new Date(firstDate); date <= lastDate; date.setDate(date.getDate() + 1)) {
+    if (isNoShowDate(date)) continue;
+
+    const key = dateKey(date);
+    if (existingDates.has(key)) continue;
+
+    filled.push({
+      index: Number.MAX_SAFE_INTEGER,
+      key: `missing-${key}`,
+      performanceId: '',
+      eventTitle: '',
+      date: new Date(date),
+      dateRaw: key,
+      timeRaw: '',
+      sold: 0,
+      soldRaw: '0',
+      remaining: capacity,
+      priceRows: 0,
+      rows: [],
+      inferred: true,
+    });
+  }
+
+  return filled.sort((a, b) => {
+    if (a.date && b.date) return a.date.getTime() - b.date.getTime();
+    if (a.date) return -1;
+    if (b.date) return 1;
+    return a.index - b.index;
+  });
+}
+
+function isNoShowDate(date) {
+  return date.getFullYear() === 2026 && date.getMonth() === 7 && date.getDate() === 19;
+}
+
+function dateKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 function normalizeHeader(header) {
