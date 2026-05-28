@@ -548,10 +548,6 @@ function renderPage(report) {
           margin-top: 10px;
         }
 
-        .next-performances {
-          grid-template-columns: 1fr;
-        }
-
         .performance-wrap {
           overflow-x: visible;
           border: 0;
@@ -559,6 +555,7 @@ function renderPage(report) {
         }
 
         .performance-table {
+          display: block;
           min-width: 0;
         }
 
@@ -574,8 +571,13 @@ function renderPage(report) {
           width: 100%;
         }
 
+        .performance-table tbody {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 8px;
+        }
+
         .performance-table tr {
-          margin-bottom: 10px;
           padding: 12px 14px;
           border: 1px solid var(--line);
           background: var(--panel);
@@ -603,15 +605,36 @@ function renderPage(report) {
 
       @media (max-width: 460px) {
         .stats {
-          grid-template-columns: 1fr;
+          gap: 6px;
+          margin-bottom: 12px;
+        }
+
+        .next-performances {
+          gap: 6px;
+          margin-bottom: 26px;
         }
 
         h1 {
           font-size: 2rem;
         }
 
-        .stat {
-          min-height: 96px;
+        .stat,
+        .next-card {
+          min-height: 78px;
+          padding: 10px 8px;
+        }
+
+        .stat p,
+        .next-card p {
+          font-size: 0.78rem;
+        }
+
+        .stat strong {
+          font-size: 1.55rem;
+        }
+
+        .next-card strong {
+          font-size: 0.98rem;
         }
       }
     </style>
@@ -661,7 +684,7 @@ function renderNextPerformances(report) {
 
   const cards = nextPerformances.map((performance) => {
     const sold = Number.isFinite(performance.sold) ? formatNumber(performance.sold) : performance.soldRaw;
-    return `<div class="next-card">
+    return `<div class="next-card" style="background-color: ${ticketSalesColor(performance.sold)};">
           <p class="muted">${escapeHtml(formatDate(performance.date, performance.dateRaw))}</p>
           <strong>${escapeHtml(sold)} sold</strong>
         </div>`;
@@ -762,8 +785,8 @@ function formatMaybeNumber(value, fallback) {
 function formatDate(date, fallback) {
   if (!date) return fallback || '';
   return new Intl.DateTimeFormat('en-US', {
-    weekday: 'long',
-    month: 'long',
+    weekday: 'short',
+    month: 'short',
     day: 'numeric',
     timeZone: 'Europe/London',
   }).format(date);
