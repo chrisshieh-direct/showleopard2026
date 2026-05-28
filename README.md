@@ -6,7 +6,7 @@ This project fetches a Red61 datalink report and writes a static HTML dashboard 
 
 For DreamHost static hosting, do not use `.env`. Put the credentials in GitHub Actions secrets instead.
 
-The workflow in `.github/workflows/publish.yml` can refresh the report once a day and upload the static `index.html` to DreamHost over SSH/SCP.
+The workflow in `.github/workflows/publish.yml` refreshes the report and uploads the static `index.html` to DreamHost over SSH/SCP.
 
 In the GitHub repo, go to:
 
@@ -26,7 +26,7 @@ Optional repository variable:
 
 - `SHOW_CAPACITY`, defaults to `87`
 
-The schedule currently runs daily at 08:15 UTC. You can also run it manually from the Actions tab with "Run workflow".
+Run it manually from the Actions tab with "Run workflow", or trigger it from DreamHost cron using GitHub's `workflow_dispatch` API.
 
 ## Local Preview
 
