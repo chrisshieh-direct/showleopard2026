@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Chris Grace Ticket Sales</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4f7f8;
+        --ink: #1d1d1f;
+        --muted: #5f6670;
+        --line: #d5dde3;
+        --panel: #ffffff;
+        --accent: #0f766e;
+        --accent-soft: #dcefeb;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        line-height: 1.45;
+      }
+
+      main {
+        width: min(1120px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 40px 0 56px;
+      }
+
+      header {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 24px;
+        margin-bottom: 28px;
+      }
+
+      h1,
+      h2 {
+        margin: 0;
+        line-height: 1;
+      }
+
+      h1 {
+        font-size: clamp(2rem, 4vw, 3.25rem);
+      }
+
+      h2 {
+        margin-top: 34px;
+        font-size: 1.4rem;
+      }
+
+      p {
+        margin: 0;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 30px;
+      }
+
+      .next-performances {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 34px;
+      }
+
+      .stat {
+        min-height: 112px;
+        padding: 18px;
+        border: 1px solid var(--line);
+        background: var(--panel);
+      }
+
+      .stat strong {
+        display: block;
+        margin-top: 8px;
+        font-size: clamp(2rem, 4vw, 3rem);
+        line-height: 1;
+      }
+
+      .accent {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+      }
+
+      .next-card {
+        min-height: 108px;
+        padding: 18px;
+        border: 1px solid var(--line);
+        background: var(--panel);
+      }
+
+      .next-card strong {
+        display: block;
+        margin-top: 8px;
+        font-size: 1.55rem;
+        line-height: 1.15;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+        margin-top: 14px;
+        border: 1px solid var(--line);
+        background: var(--panel);
+      }
+
+      table {
+        width: 100%;
+        min-width: 680px;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        color: var(--muted);
+        font-size: 0.82rem;
+        font-weight: 700;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      tbody tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .number {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+
+      details {
+        margin-top: 34px;
+      }
+
+      summary {
+        cursor: pointer;
+        font-size: 1.4rem;
+        font-weight: 700;
+        line-height: 1;
+      }
+
+      @media (max-width: 760px) {
+        main {
+          width: min(100% - 20px, 1120px);
+          padding-top: 24px;
+        }
+
+        header {
+          display: block;
+        }
+
+        header p {
+          margin-top: 10px;
+        }
+
+        .stats {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .next-performances {
+          grid-template-columns: 1fr;
+        }
+
+        .performance-wrap {
+          overflow-x: visible;
+          border: 0;
+          background: transparent;
+        }
+
+        .performance-table {
+          min-width: 0;
+        }
+
+        .performance-table thead {
+          display: none;
+        }
+
+        .performance-table,
+        .performance-table tbody,
+        .performance-table tr,
+        .performance-table td {
+          display: block;
+          width: 100%;
+        }
+
+        .performance-table tr {
+          margin-bottom: 10px;
+          padding: 12px 14px;
+          border: 1px solid var(--line);
+          background: var(--panel);
+        }
+
+        .performance-table td {
+          display: flex;
+          justify-content: space-between;
+          gap: 16px;
+          padding: 6px 0;
+          border-bottom: 0;
+          text-align: right;
+        }
+
+        .performance-table td::before {
+          content: attr(data-label);
+          flex: 0 0 auto;
+          color: var(--muted);
+          font-size: 0.78rem;
+          font-weight: 700;
+          text-align: left;
+          text-transform: uppercase;
+        }
+      }
+
+      @media (max-width: 460px) {
+        .stats {
+          grid-template-columns: 1fr;
+        }
+
+        h1 {
+          font-size: 2rem;
+        }
+
+        .stat {
+          min-height: 96px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <h1>Chris Grace Ticket Sales</h1>
+          <p class="muted">Red61 report refreshed 28 May 2026, 21:37</p>
+        </div>
+      </header>
+      <section class="stats" aria-label="Ticket sales summary">
+        <div class="stat accent">
+          <p class="muted">Tickets sold</p>
+          <strong>117</strong>
+        </div>
+        <div class="stat">
+          <p class="muted">Remaining</p>
+          <strong>1,449</strong>
+        </div>
+        <div class="stat">
+          <p class="muted">Capacity sold</p>
+          <strong>7.5%</strong>
+        </div>
+        <div class="stat">
+          <p class="muted">Performances</p>
+          <strong>18</strong>
+        </div>
+      </section>
+      <section class="next-performances" aria-label="Next three performances">
+        <div class="next-card">
+          <p class="muted">Wednesday, August 5</p>
+          <strong>1 sold</strong>
+        </div>
+<div class="next-card">
+          <p class="muted">Thursday, August 6</p>
+          <strong>3 sold</strong>
+        </div>
+<div class="next-card">
+          <p class="muted">Friday, August 7</p>
+          <strong>6 sold</strong>
+        </div>
+      </section>
+      <section>
+        <h2>By Performance</h2>
+        <div class="table-wrap performance-wrap">
+          <table class="performance-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th class="number">Tickets Sold</th>
+                <th class="number">Remaining</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+          <td data-label="Date">Wednesday, August 5</td>
+          <td class="number" data-label="Tickets Sold">1</td>
+          <td class="number" data-label="Remaining">86</td>
+        </tr>
+<tr>
+          <td data-label="Date">Thursday, August 6</td>
+          <td class="number" data-label="Tickets Sold">3</td>
+          <td class="number" data-label="Remaining">84</td>
+        </tr>
+<tr>
+          <td data-label="Date">Friday, August 7</td>
+          <td class="number" data-label="Tickets Sold">6</td>
+          <td class="number" data-label="Remaining">81</td>
+        </tr>
+<tr>
+          <td data-label="Date">Saturday, August 8</td>
+          <td class="number" data-label="Tickets Sold">12</td>
+          <td class="number" data-label="Remaining">75</td>
+        </tr>
+<tr>
+          <td data-label="Date">Monday, August 10</td>
+          <td class="number" data-label="Tickets Sold">35</td>
+          <td class="number" data-label="Remaining">52</td>
+        </tr>
+<tr>
+          <td data-label="Date">Tuesday, August 11</td>
+          <td class="number" data-label="Tickets Sold">15</td>
+          <td class="number" data-label="Remaining">72</td>
+        </tr>
+<tr>
+          <td data-label="Date">Wednesday, August 12</td>
+          <td class="number" data-label="Tickets Sold">2</td>
+          <td class="number" data-label="Remaining">85</td>
+        </tr>
+<tr>
+          <td data-label="Date">Friday, August 14</td>
+          <td class="number" data-label="Tickets Sold">3</td>
+          <td class="number" data-label="Remaining">84</td>
+        </tr>
+<tr>
+          <td data-label="Date">Saturday, August 15</td>
+          <td class="number" data-label="Tickets Sold">5</td>
+          <td class="number" data-label="Remaining">82</td>
+        </tr>
+<tr>
+          <td data-label="Date">Sunday, August 16</td>
+          <td class="number" data-label="Tickets Sold">2</td>
+          <td class="number" data-label="Remaining">85</td>
+        </tr>
+<tr>
+          <td data-label="Date">Monday, August 17</td>
+          <td class="number" data-label="Tickets Sold">3</td>
+          <td class="number" data-label="Remaining">84</td>
+        </tr>
+<tr>
+          <td data-label="Date">Tuesday, August 18</td>
+          <td class="number" data-label="Tickets Sold">8</td>
+          <td class="number" data-label="Remaining">79</td>
+        </tr>
+<tr>
+          <td data-label="Date">Thursday, August 20</td>
+          <td class="number" data-label="Tickets Sold">2</td>
+          <td class="number" data-label="Remaining">85</td>
+        </tr>
+<tr>
+          <td data-label="Date">Friday, August 21</td>
+          <td class="number" data-label="Tickets Sold">5</td>
+          <td class="number" data-label="Remaining">82</td>
+        </tr>
+<tr>
+          <td data-label="Date">Saturday, August 22</td>
+          <td class="number" data-label="Tickets Sold">5</td>
+          <td class="number" data-label="Remaining">82</td>
+        </tr>
+<tr>
+          <td data-label="Date">Friday, August 28</td>
+          <td class="number" data-label="Tickets Sold">5</td>
+          <td class="number" data-label="Remaining">82</td>
+        </tr>
+<tr>
+          <td data-label="Date">Saturday, August 29</td>
+          <td class="number" data-label="Tickets Sold">3</td>
+          <td class="number" data-label="Remaining">84</td>
+        </tr>
+<tr>
+          <td data-label="Date">Monday, August 31</td>
+          <td class="number" data-label="Tickets Sold">2</td>
+          <td class="number" data-label="Remaining">85</td>
+        </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

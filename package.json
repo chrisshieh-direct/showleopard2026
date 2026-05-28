@@ -1,0 +1,14 @@
+{
+  "name": "showleopard-red61-report",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Static Red61 ticket-sales report generator.",
+  "scripts": {
+    "refresh": "node scripts/refresh-red61.js",
+    "serve": "python3 -m http.server 8000 -d public",
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

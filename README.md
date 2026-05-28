@@ -1,36 +1,18 @@
-# Show Leopard Red61 Report
+# Chris Grace Red61 Report
 
 This project fetches a Red61 datalink report and writes a static HTML dashboard to `public/index.html`.
 
-## Setup
+## Best Setup: GitHub to DreamHost
 
-Create a local `.env` file from `.env.example` and fill in the Red61 datalink URL, username, and password.
-
-```sh
-cp .env.example .env
-npm run refresh
-npm run serve
-```
-
-Then open `http://localhost:8000`.
-
-Only the generated HTML needs to be uploaded to a static webhost. To update it, run `npm run refresh` again and upload the new `public/index.html`.
-
-## Cached Server
-
-For a VPS such as Hetzner, run the tiny built-in Node server:
-
-```sh
-npm start
-```
-
-It serves `public/index.html`, checks whether that cached file is older than `RED61_CACHE_TTL_HOURS`, and refreshes it from Red61 only when needed. The default is once every 24 hours.
-
-## GitHub Scheduled Publish
+For DreamHost static hosting, do not use `.env`. Put the credentials in GitHub Actions secrets instead.
 
 The workflow in `.github/workflows/publish.yml` can refresh the report once a day and upload the static `index.html` to DreamHost over SSH/SCP.
 
-Add these repository secrets in GitHub:
+In the GitHub repo, go to:
+
+`Settings` -> `Secrets and variables` -> `Actions` -> `Secrets` -> `New repository secret`
+
+Add these repository secrets:
 
 - `RED61_DATALINK_URL`
 - `RED61_USER`
@@ -45,4 +27,27 @@ Optional repository variable:
 - `SHOW_CAPACITY`, defaults to `87`
 
 The schedule currently runs daily at 08:15 UTC. You can also run it manually from the Actions tab with "Run workflow".
-# showleopard2026
+
+## Local Preview
+
+Use `.env` only when running the report from this computer.
+
+```sh
+cp .env.example .env
+npm run refresh
+npm run serve
+```
+
+Then open `http://localhost:8000`.
+
+If you want to upload manually, upload only `public/index.html` to DreamHost.
+
+## Cached Server
+
+For a VPS such as Hetzner, run the tiny built-in Node server:
+
+```sh
+npm start
+```
+
+It serves `public/index.html`, checks whether that cached file is older than `RED61_CACHE_TTL_HOURS`, and refreshes it from Red61 only when needed. The default is once every 24 hours.

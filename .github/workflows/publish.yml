@@ -1,0 +1,38 @@
+name: Refresh and Publish Report
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "15 8 * * *"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Refresh Red61 report
+        env:
+          RED61_DATALINK_URL: ${{ secrets.RED61_DATALINK_URL }}
+          RED61_USER: ${{ secrets.RED61_USER }}
+          RED61_PASSWORD: ${{ secrets.RED61_PASSWORD }}
+          SHOW_CAPACITY: ${{ vars.SHOW_CAPACITY || '87' }}
+        run: npm run refresh
+
+      - name: Upload to DreamHost
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DREAMHOST_HOST }}
+          username: ${{ secrets.DREAMHOST_USER }}
+          key: ${{ secrets.DREAMHOST_SSH_KEY }}
+          source: "public/index.html"
+          target: ${{ secrets.DREAMHOST_TARGET_DIR }}
+          strip_components: 1
+
