@@ -370,6 +370,7 @@ function renderPage(report) {
   }).format(report.generatedAt)
     .replace(',', '')
     .replace(/\s(AM|PM)$/, (match) => match.toLowerCase());
+  const lastEdited = formatTimestamp(new Date());
 
   return `<!doctype html>
 <html lang="en">
@@ -523,15 +524,25 @@ function renderPage(report) {
         font-variant-numeric: tabular-nums;
       }
 
-      details {
-        margin-top: 34px;
+      .past-performances {
+        margin-top: 10px;
       }
 
-      summary {
+      .past-performances summary {
+        display: inline-block;
         cursor: pointer;
-        font-size: 1.4rem;
+        color: var(--muted);
+        font-size: 0.82rem;
         font-weight: 700;
-        line-height: 1;
+        letter-spacing: 0;
+        line-height: 1.2;
+        text-transform: uppercase;
+      }
+
+      .page-footer {
+        margin-top: 34px;
+        color: var(--muted);
+        font-size: 0.78rem;
       }
 
       @media (max-width: 760px) {
@@ -650,6 +661,7 @@ function renderPage(report) {
       ${report.hasPerformanceData ? renderStats(report) : renderFallbackNotice(report)}
       ${report.hasPerformanceData ? renderNextPerformances(report) : ''}
       ${report.hasPerformanceData ? renderPerformanceTable(report) : ''}
+      <footer class="page-footer">Last edited ${escapeHtml(lastEdited)}</footer>
     </main>
   </body>
 </html>
@@ -707,6 +719,22 @@ function londonStartOfToday() {
   return new Date(values.year, values.month - 1, values.day);
 }
 
+function formatTimestamp(date) {
+  return new Intl.DateTimeFormat('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: 'America/New_York',
+  }).format(date)
+    .replace(',', '')
+    .replace(',', '')
+    .replace(/\s(AM|PM)$/, (match) => match.toLowerCase());
+}
+
 function renderFallbackNotice(report) {
   return `<section class="stat">
         <p class="muted">The report was fetched, but the generator could not confidently identify the performance date and tickets-sold columns. Showing the raw Red61 table below.</p>
@@ -715,17 +743,32 @@ function renderFallbackNotice(report) {
 }
 
 function renderPerformanceTable(report) {
-  const rows = report.performances.map((performance) => {
-    return `<tr style="background-color: ${ticketSalesColor(performance.sold)};">
-          <td data-label="Date">${escapeHtml(formatDate(performance.date, performance.dateRaw, performance.timeRaw))}</td>
-          <td class="number" data-label="Tickets Sold">${formatMaybeNumber(performance.sold, performance.soldRaw)}</td>
-          <td class="number" data-label="Remaining">${performance.remaining === null ? 'n/a' : formatNumber(performance.remaining)}</td>
-        </tr>`;
-  }).join('\n');
+  const today = londonStartOfToday();
+  const pastPerformances = report.performances.filter((performance) => {
+    return performance.date && performance.date < today;
+  });
+  const upcomingPerformances = report.performances.filter((performance) => {
+    return !performance.date || performance.date >= today;
+  });
 
   return `<section>
         <h2>By Performance</h2>
-        <div class="table-wrap performance-wrap">
+        ${pastPerformances.length ? renderPastPerformances(pastPerformances) : ''}
+        ${renderPerformanceTableBlock(upcomingPerformances)}
+      </section>`;
+}
+
+function renderPastPerformances(performances) {
+  return `<details class="past-performances">
+          <summary>Past shows</summary>
+          ${renderPerformanceTableBlock(performances)}
+        </details>`;
+}
+
+function renderPerformanceTableBlock(performances) {
+  const rows = performances.map(renderPerformanceRow).join('\n');
+
+  return `<div class="table-wrap performance-wrap">
           <table class="performance-table">
             <thead>
               <tr>
@@ -738,8 +781,15 @@ function renderPerformanceTable(report) {
               ${rows}
             </tbody>
           </table>
-        </div>
-      </section>`;
+        </div>`;
+}
+
+function renderPerformanceRow(performance) {
+  return `<tr style="background-color: ${ticketSalesColor(performance.sold)};">
+          <td data-label="Date">${escapeHtml(formatDate(performance.date, performance.dateRaw, performance.timeRaw))}</td>
+          <td class="number" data-label="Tickets Sold">${formatMaybeNumber(performance.sold, performance.soldRaw)}</td>
+          <td class="number" data-label="Remaining">${performance.remaining === null ? 'n/a' : formatNumber(performance.remaining)}</td>
+        </tr>`;
 }
 
 function escapeHtml(value) {
