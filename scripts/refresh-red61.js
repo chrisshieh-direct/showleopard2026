@@ -307,11 +307,17 @@ function parseNumber(value) {
 }
 
 function renderPage(report) {
-  const refreshed = new Intl.DateTimeFormat('en-GB', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
+  const refreshed = new Intl.DateTimeFormat('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
     timeZone: 'Europe/London',
-  }).format(report.generatedAt);
+  }).format(report.generatedAt)
+    .replace(',', '')
+    .replace(/\s(AM|PM)$/, (match) => match.toLowerCase());
 
   return `<!doctype html>
 <html lang="en">
@@ -567,7 +573,7 @@ function renderPage(report) {
       <header>
         <div>
           <h1>Chris Grace Ticket Sales</h1>
-          <p class="muted">Red61 report refreshed ${escapeHtml(refreshed)}</p>
+          <p class="muted">Refreshed on ${escapeHtml(refreshed)}</p>
         </div>
       </header>
       ${report.hasPerformanceData ? renderStats(report) : renderFallbackNotice(report)}
