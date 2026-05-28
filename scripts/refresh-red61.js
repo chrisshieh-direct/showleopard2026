@@ -440,7 +440,7 @@ function renderPage(report) {
 
       .stats {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 12px;
         margin-bottom: 30px;
       }
@@ -548,10 +548,6 @@ function renderPage(report) {
           margin-top: 10px;
         }
 
-        .stats {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-
         .next-performances {
           grid-template-columns: 1fr;
         }
@@ -654,10 +650,6 @@ function renderStats(report) {
           <p class="muted">Capacity sold</p>
           <strong>${percentage}</strong>
         </div>
-        <div class="stat">
-          <p class="muted">Performances</p>
-          <strong>${formatNumber(report.performances.length)}</strong>
-        </div>
       </section>`;
 }
 
@@ -701,7 +693,7 @@ function renderFallbackNotice(report) {
 
 function renderPerformanceTable(report) {
   const rows = report.performances.map((performance) => {
-    return `<tr>
+    return `<tr style="background-color: ${ticketSalesColor(performance.sold)};">
           <td data-label="Date">${escapeHtml(formatDate(performance.date, performance.dateRaw, performance.timeRaw))}</td>
           <td class="number" data-label="Tickets Sold">${formatMaybeNumber(performance.sold, performance.soldRaw)}</td>
           <td class="number" data-label="Remaining">${performance.remaining === null ? 'n/a' : formatNumber(performance.remaining)}</td>
@@ -734,6 +726,28 @@ function escapeHtml(value) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+function ticketSalesColor(sold) {
+  if (!Number.isFinite(sold) || sold === 1) return '#ffffff';
+  if (sold <= 0) return '#fff1f3';
+
+  const t = Math.min(Math.max((sold - 1) / 86, 0), 1);
+  const start = { r: 255, g: 255, b: 255 };
+  const end = { r: 204, g: 237, b: 219 };
+  const eased = Math.pow(t, 0.75);
+
+  return rgbToHex({
+    r: Math.round(start.r + (end.r - start.r) * eased),
+    g: Math.round(start.g + (end.g - start.g) * eased),
+    b: Math.round(start.b + (end.b - start.b) * eased),
+  });
+}
+
+function rgbToHex(color) {
+  return `#${[color.r, color.g, color.b]
+    .map((channel) => channel.toString(16).padStart(2, '0'))
+    .join('')}`;
 }
 
 function formatNumber(value) {
