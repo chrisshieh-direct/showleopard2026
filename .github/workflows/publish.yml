@@ -18,6 +18,18 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Download existing sales history
+        env:
+          DREAMHOST_HOST: ${{ secrets.DREAMHOST_HOST }}
+          DREAMHOST_USER: ${{ secrets.DREAMHOST_USER }}
+          DREAMHOST_SSH_KEY: ${{ secrets.DREAMHOST_SSH_KEY }}
+          DREAMHOST_TARGET_DIR: ${{ secrets.DREAMHOST_TARGET_DIR }}
+        run: |
+          mkdir -p ~/.ssh public
+          printf '%s\n' "$DREAMHOST_SSH_KEY" > ~/.ssh/dreamhost_key
+          chmod 600 ~/.ssh/dreamhost_key
+          scp -i ~/.ssh/dreamhost_key -o StrictHostKeyChecking=no "$DREAMHOST_USER@$DREAMHOST_HOST:$DREAMHOST_TARGET_DIR/sales-history.json" public/sales-history.json || true
+
       - name: Refresh Red61 report
         env:
           RED61_DATALINK_URL: ${{ secrets.RED61_DATALINK_URL }}
@@ -32,6 +44,6 @@ jobs:
           host: ${{ secrets.DREAMHOST_HOST }}
           username: ${{ secrets.DREAMHOST_USER }}
           key: ${{ secrets.DREAMHOST_SSH_KEY }}
-          source: "public/index.html"
+          source: "public/index.html,public/sales-history.json"
           target: ${{ secrets.DREAMHOST_TARGET_DIR }}
           strip_components: 1

@@ -3,6 +3,7 @@ const path = require('node:path');
 
 const rootDir = path.resolve(__dirname, '..');
 const outputPath = path.join(rootDir, 'public', 'index.html');
+const historyPath = path.join(rootDir, 'public', 'sales-history.json');
 
 loadEnvFile(path.join(rootDir, '.env'));
 loadEnvFile(path.join(rootDir, '.env.local'));
@@ -36,6 +37,7 @@ async function main() {
   const sourceHtml = await response.text();
   const table = parseFirstHtmlTable(sourceHtml);
   const report = buildReport(table, config);
+  report.salesHistory = await updateSalesHistory(report);
   const html = renderPage(report);
 
   await fs.mkdir(path.dirname(outputPath), { recursive: true });
@@ -46,6 +48,45 @@ async function main() {
   if (report.hasPerformanceData) {
     console.log(`Performances: ${report.performances.length}`);
     console.log(`Total sold: ${report.totalSold}`);
+  }
+}
+
+async function updateSalesHistory(report) {
+  const history = await readSalesHistory();
+  const today = dateKeyForTimeZone(new Date(), 'Europe/London');
+  const existingIndex = history.findIndex((entry) => entry.date === today);
+  const entry = {
+    date: today,
+    totalSold: report.totalSold,
+    refreshedAt: report.generatedAt.toISOString(),
+  };
+
+  if (existingIndex === -1) {
+    history.push(entry);
+  } else {
+    history[existingIndex] = {
+      ...history[existingIndex],
+      ...entry,
+    };
+  }
+
+  history.sort((a, b) => a.date.localeCompare(b.date));
+  await fs.mkdir(path.dirname(historyPath), { recursive: true });
+  await fs.writeFile(historyPath, `${JSON.stringify(history, null, 2)}\n`, 'utf8');
+  return history;
+}
+
+async function readSalesHistory() {
+  try {
+    const content = await fs.readFile(historyPath, 'utf8');
+    const parsed = JSON.parse(content);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((entry) => {
+      return typeof entry.date === 'string' && Number.isFinite(entry.totalSold);
+    });
+  } catch (error) {
+    if (error.code === 'ENOENT') return [];
+    throw error;
   }
 }
 
@@ -486,6 +527,50 @@ function renderPage(report) {
         line-height: 1.15;
       }
 
+      .history {
+        margin-bottom: 34px;
+      }
+
+      .history h2 {
+        margin-bottom: 14px;
+      }
+
+      .history-card {
+        padding: 18px;
+        border: 1px solid var(--line);
+        background: var(--panel);
+      }
+
+      .history-chart {
+        display: block;
+        width: 100%;
+        height: auto;
+        overflow: visible;
+      }
+
+      .history-line {
+        fill: none;
+        stroke: var(--accent);
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 3;
+      }
+
+      .history-dot {
+        fill: var(--accent);
+      }
+
+      .history-axis,
+      .history-grid {
+        stroke: var(--line);
+        stroke-width: 1;
+      }
+
+      .history-label {
+        fill: var(--muted);
+        font-size: 12px;
+      }
+
       .table-wrap {
         overflow-x: auto;
         margin-top: 14px;
@@ -660,6 +745,7 @@ function renderPage(report) {
       </header>
       ${report.hasPerformanceData ? renderStats(report) : renderFallbackNotice(report)}
       ${report.hasPerformanceData ? renderNextPerformances(report) : ''}
+      ${report.hasPerformanceData ? renderSalesHistory(report) : ''}
       ${report.hasPerformanceData ? renderPerformanceTable(report) : ''}
       <footer class="page-footer">Last edited ${escapeHtml(lastEdited)}</footer>
     </main>
@@ -719,6 +805,17 @@ function londonStartOfToday() {
   return new Date(values.year, values.month - 1, values.day);
 }
 
+function dateKeyForTimeZone(date, timeZone) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    day: '2-digit',
+    month: '2-digit',
+    timeZone,
+    year: 'numeric',
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
 function formatTimestamp(date) {
   return new Intl.DateTimeFormat('en-US', {
     weekday: 'long',
@@ -740,6 +837,55 @@ function renderFallbackNotice(report) {
         <p class="muted">The report was fetched, but the generator could not confidently identify the performance date and tickets-sold columns. Showing the raw Red61 table below.</p>
         <p class="muted">Rows found: ${formatNumber(report.rawRows.length)}</p>
       </section>`;
+}
+
+function renderSalesHistory(report) {
+  const history = Array.isArray(report.salesHistory) ? report.salesHistory : [];
+  if (!history.length) return '';
+
+  const chart = buildSalesHistoryChart(history);
+
+  return `<section class="history" aria-label="Sales over time">
+        <h2>Sales Over Time</h2>
+        <div class="history-card">
+          ${chart}
+        </div>
+      </section>`;
+}
+
+function buildSalesHistoryChart(history) {
+  const width = 760;
+  const height = 220;
+  const padding = { top: 18, right: 22, bottom: 36, left: 42 };
+  const plotWidth = width - padding.left - padding.right;
+  const plotHeight = height - padding.top - padding.bottom;
+  const maxSold = Math.max(1, ...history.map((entry) => entry.totalSold));
+  const yMax = Math.max(10, Math.ceil(maxSold / 10) * 10);
+
+  const points = history.map((entry, index) => {
+    const x = history.length === 1
+      ? padding.left + plotWidth
+      : padding.left + (index / (history.length - 1)) * plotWidth;
+    const y = padding.top + plotHeight - (entry.totalSold / yMax) * plotHeight;
+    return { ...entry, x, y };
+  });
+  const path = points.map((point, index) => {
+    return `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(1)} ${point.y.toFixed(1)}`;
+  }).join(' ');
+  const first = points[0];
+  const last = points[points.length - 1];
+
+  return `<svg class="history-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Total tickets sold over time">
+            <line class="history-axis" x1="${padding.left}" y1="${padding.top + plotHeight}" x2="${padding.left + plotWidth}" y2="${padding.top + plotHeight}"></line>
+            <line class="history-grid" x1="${padding.left}" y1="${padding.top}" x2="${padding.left + plotWidth}" y2="${padding.top}"></line>
+            <text class="history-label" x="0" y="${padding.top + 4}">${formatNumber(yMax)}</text>
+            <text class="history-label" x="0" y="${padding.top + plotHeight + 4}">0</text>
+            <path class="history-line" d="${path}"></path>
+            ${points.map((point) => `<circle class="history-dot" cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="4"><title>${escapeHtml(formatHistoryDate(point.date))}: ${formatNumber(point.totalSold)} sold</title></circle>`).join('\n')}
+            <text class="history-label" x="${padding.left}" y="${height - 8}">${escapeHtml(formatHistoryDate(first.date))}</text>
+            <text class="history-label" text-anchor="end" x="${padding.left + plotWidth}" y="${height - 8}">${escapeHtml(formatHistoryDate(last.date))}</text>
+            <text class="history-label" text-anchor="end" x="${padding.left + plotWidth}" y="${padding.top + 4}">${formatNumber(last.totalSold)} sold</text>
+          </svg>`;
 }
 
 function renderPerformanceTable(report) {
@@ -830,6 +976,16 @@ function formatNumber(value) {
 function formatMaybeNumber(value, fallback) {
   if (!Number.isFinite(value)) return escapeHtml(fallback || '');
   return formatNumber(value);
+}
+
+function formatHistoryDate(date) {
+  const parsed = parseReportDate(date);
+  if (!parsed) return date;
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'Europe/London',
+  }).format(parsed);
 }
 
 function formatDate(date, fallback) {
